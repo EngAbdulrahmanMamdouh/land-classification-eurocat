@@ -2,13 +2,14 @@ import streamlit as st
 import tensorflow as tf
 from PIL import Image
 import numpy as np
+import keras
 
 st.title("Land Classification Project (EuroSAT)")
 
 # 1. تحميل الموديل
 @st.cache_resource
 def load_my_model():
-    return tf.keras.models.load_model('EuroSAT_MobileNetV2_Final.keras', safe_mode=False)
+    return keras.models.load_model('EuroSAT_MobileNetV2_Final.keras')
 
 model = load_my_model()
 
