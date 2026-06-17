@@ -2,17 +2,31 @@ import streamlit as st
 import tensorflow as tf
 from PIL import Image
 import numpy as np
-import keras
 
 st.title("Land Classification Project (EuroSAT)")
 
-# 1. تحميل الموديل بأمان لتفادي الـ TypeError
+# 1. بناء الهيكل يدوياً وشحن الأوزان لتخطي مشكلة الـ BatchNormalization تماماً
 @st.cache_resource
 def load_my_model():
-    # استخدام compile=False بيتخطى تعارض الإصدارات اللي بيسبب الأيرور
-    model = keras.models.load_model('EuroSAT_MobileNetV2_Final.keras', compile=False)
-    # عمل compile جديد خفيف للموديل عشان يشتغل في الـ Prediction سليم
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    # بناء الـ Base Model القياسي بدون الأوزان الجاهزة
+    base_model = tf.keras.applications.MobileNetV2(
+        input_shape=(128, 128, 3),
+        include_top=False,
+        weights=None
+    )
+    base_model.trainable = False
+    
+    # بناء الـ Sequential بنفس الترتيب المكتوب جوه ملفك بالظبط
+    model = tf.keras.Sequential([
+        tf.keras.layers.Input(shape=(128, 128, 3)),
+        base_model,
+        tf.keras.layers.GlobalAveragePooling2D(),
+        tf.keras.layers.Dropout(0.2), # مأخوذة من الـ config المذكور في الـ logs
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+    
+    # شحن الأوزان مباشرة من ملفك الحالي بدون فتح كاجل
+    model.load_weights('EuroSAT_MobileNetV2_Final.keras')
     return model
 
 model = load_my_model()
@@ -58,7 +72,6 @@ if uploaded_file:
     with st.spinner("Classifying image..."):
         predictions = model.predict(img_array)
 
-        # لو الموديل فيه softmax آخر layer → ده الصحيح
         score = predictions[0]
 
         class_index = np.argmax(score)
