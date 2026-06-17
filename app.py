@@ -6,10 +6,14 @@ import keras
 
 st.title("Land Classification Project (EuroSAT)")
 
-# 1. تحميل الموديل
+# 1. تحميل الموديل بأمان لتفادي الـ TypeError
 @st.cache_resource
 def load_my_model():
-    return keras.models.load_model('EuroSAT_MobileNetV2_Final.keras')
+    # استخدام compile=False بيتخطى تعارض الإصدارات اللي بيسبب الأيرور
+    model = keras.models.load_model('EuroSAT_MobileNetV2_Final.keras', compile=False)
+    # عمل compile جديد خفيف للموديل عشان يشتغل في الـ Prediction سليم
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
 
 model = load_my_model()
 
